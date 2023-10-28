@@ -1,9 +1,6 @@
 import warnings
 
-duckdb_mapping = {
-    "levenshtein": "levenshtein",
-    "jaro_winkler": "jaro_winkler",
-}
+duckdb_mapping = {"levenshtein": "levenshtein", "jaro_winkler": "jaro_winkler"}
 all_dialects_mapping = {"duckdb": duckdb_mapping}
 
 
@@ -11,7 +8,7 @@ class Linker:
     def __init__(self, settings_dict: dict):
         if self.dialect:
             cl = settings_dict["comparison_level"]
-            self.comparison_level = cl.get_activated_level(dialect=self.dialect)
+            self.comparison_level = cl.get_dialected_level(dialect=self.dialect)
 
 
 class DuckDBLinker(Linker):
@@ -31,17 +28,19 @@ class LazyComparisonLevelFactory:
         self.kwargs = kwargs
         del self.kwargs["dialect"]
 
-    def get_activated_level(self, dialect):
+    def get_dialected_level(self, dialect):
         return self.comparison_level_function(dialect=dialect, **self.kwargs)
 
     def __getattr__(self, name):
-        if name != "get_activated_level":
+        if name != "get_dialected_level":
             warnings.warn(
-                "This comparison level cannot be used directly because it doesn't have "
+                "This comparison level cannot be called directly because it doesn't have "
                 "a dialect associated with it.\nEither pass a dialect to it when you "
                 "create it, or obtain an activated version by calling\n"
-                "activated_level = this_level.get_activated_level(dialect)\n"
-                'eg. this_level.activate("duckdb"))'
+                "comparison_level = comparison_level.get_dialected_level(dialect)\n"
+                'eg. comparison_level.get_dialected_level("duckdb"))\n'
+                "Note this will happen automatically when this is passed into the "
+                "linker as part of the settings"
             )
 
 
