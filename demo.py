@@ -22,7 +22,7 @@ lazy_level = levenshtein_level("name", 2)
 lazy_level.level_dict
 
 # You can manually activate a LazyComparisonLevelFactory to get a ComparisonLevel
-cl = lazy_level.get_activated_level("duckdb")
+cl = lazy_level.get_dialected_level("duckdb")
 
 
 # Highly simplified usage
