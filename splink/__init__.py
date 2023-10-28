@@ -4,7 +4,7 @@ duckdb_mapping = {
     "levenshtein": "levenshtein",
     "jaro_winkler": "jaro_winkler",
 }
-dialect_mapping = {"duckdb": duckdb_mapping}
+all_dialects_mapping = {"duckdb": duckdb_mapping}
 
 
 class Linker:
@@ -52,7 +52,9 @@ def levenshtein_level(
         kwargs = locals()
         return LazyComparisonLevelFactory(levenshtein_level, **kwargs)
 
-    lev_fn_name = dialect_mapping[dialect]["levenshtein"]
+    dialect_mapping = all_dialects_mapping[dialect]
+
+    lev_fn_name = dialect_mapping["levenshtein"]
     sql_cond = f"{lev_fn_name}({col_name}_l, {col_name}_r) " f"<= {distance_threshold}"
     level_dict = {
         "sql_condition": sql_cond,
