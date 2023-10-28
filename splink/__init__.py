@@ -1,4 +1,13 @@
 import warnings
+import sqlglot
+from typing import Union
+
+
+duckdb_mapping = {
+    "levenshtein": "levenshtein",
+    "jaro_winkler": "jaro_winkler",
+    "identifier_quote": sqlglot.Dialect["duckdb"].IDENTIFIER_START,
+}
 
 duckdb_mapping = {"levenshtein": "levenshtein", "jaro_winkler": "jaro_winkler"}
 all_dialects_mapping = {"duckdb": duckdb_mapping}
@@ -60,3 +69,29 @@ def levenshtein_level(
         "label_for_charts": f"{lev_fn_name} <= {distance_threshold}",
     }
     return ComparisonLevel(level_dict)
+
+
+class LazyBlockingRuleFactory:
+    def __init__(self, blocking_rule_function, **kwargs):
+        self.blocking_rule_function = blocking_rule_function
+        self.kwargs = kwargs
+        del self.kwargs["dialect"]
+
+
+class BlockingRule:
+    def __init__(
+        self,
+        blocking_rule: Union["BlockingRule", dict, str],
+        salting_partitions: int = 1,
+    ):
+        self._blocking_rule = blocking_rule
+
+
+def block_on(col_names: list[str], dialect=None) -> BlockingRule:
+    if not dialect:
+        kwargs = locals()
+        return LazyBlockingRuleFactory(levenshtein_level, **kwargs)
+
+    dialect_mapping = all_dialects_mapping[dialect]
+    br_string = " AND ".join(f"(l.{col} = r.{col})" for col in col_names)
+    return BlockingRule(br_string)

@@ -1,4 +1,4 @@
-from splink import DuckDBLinker, levenshtein_level
+from splink import DuckDBLinker, levenshtein_level, block_on
 
 #########################
 # Suggested Usage Pattern (the settings object here does not have its full complexity)
@@ -22,7 +22,7 @@ lazy_level = levenshtein_level("name", 2)
 lazy_level.level_dict
 
 # You can manually activate a LazyComparisonLevelFactory to get a ComparisonLevel
-cl = lazy_level.get_activated_level("duckdb")
+cl = lazy_level.get_dialected_level("duckdb")
 
 
 # Highly simplified usage
@@ -33,3 +33,9 @@ linker = DuckDBLinker(settings)
 
 # e.g. this works
 linker.comparison_level.level_dict
+
+# Demo of block on
+
+block_on(["first_name", "surname"])
+
+block_on(["first_name", "surname"], "duckdb")._blocking_rule
