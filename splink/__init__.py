@@ -1,6 +1,5 @@
 # TODO:
 # Better error message if fn not available for backend - wrap dicts in class or something?
-# Boilerplate for the check no dialect part of the function
 
 import warnings
 from sqlglot.expressions import Identifier
@@ -8,6 +7,25 @@ from sqlglot.expressions import Identifier
 duckdb_mapping = {"levenshtein": "levenshtein", "jaro_winkler": "jaro_winkler"}
 athena_mapping = {"levenshtein": "levenshtein_distance"}
 all_dialects_mapping = {"duckdb": duckdb_mapping, "presto": athena_mapping}
+
+
+def lookup_dialect(dialect, key):
+    try:
+        dialect_mapping = all_dialects_mapping[dialect]
+    except KeyError:
+        available_dialects = ", ".join(all_dialects_mapping.keys())
+        raise KeyError(
+            f"Dialect '{dialect}' not found. Available dialects"
+            f" are: {available_dialects}"
+        )
+
+    try:
+        return dialect_mapping[key]
+    except KeyError:
+        raise NotImplementedError(
+            "The comparison level you've asked for is not implemented for the "
+            f"{dialect} dialect"
+        )
 
 
 class Linker:
@@ -126,9 +144,7 @@ def levenshtein_level(
         kwargs = locals()
         return LazyComparisonLevelFactory(levenshtein_level, **kwargs)
 
-    dialect_mapping = all_dialects_mapping[dialect]
-
-    lev_fn_name = dialect_mapping["levenshtein"]
+    lev_fn_name = lookup_dialect(dialect, "levenshtein")
 
     return distance_function_level(
         col_name, lev_fn_name, distance_threshold, False, dialect
@@ -142,9 +158,7 @@ def jaro_winkler_level(
         kwargs = locals()
         return LazyComparisonLevelFactory(jaro_winkler_level, **kwargs)
 
-    dialect_mapping = all_dialects_mapping[dialect]
-
-    jw_fn_name = dialect_mapping["jaro_winkler"]
+    jw_fn_name = lookup_dialect(dialect, "jaro_winkler")
 
     return distance_function_level(
         col_name, jw_fn_name, distance_threshold, False, dialect
