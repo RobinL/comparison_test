@@ -1,16 +1,17 @@
+import warnings
+
 duckdb_mapping = {
     "levenshtein": "levenshtein",
     "jaro_winkler": "jaro_winkler",
 }
-mappings = {"duckdb": duckdb_mapping}
+dialect_mapping = {"duckdb": duckdb_mapping}
 
 
 class Linker:
     def __init__(self, settings_dict: dict):
         if self.dialect:
-            dialect_mapping = mappings["duckdb"]
             cl = settings_dict["comparison_level"]
-            self.comparison_level = cl.activate(dialect_mapping=dialect_mapping)
+            self.comparison_level = cl.activate(dialect=self.dialect)
 
 
 class DuckDBLinker(Linker):
@@ -28,22 +29,30 @@ class LazyComparisonLevelFactory:
     def __init__(self, comparison_level_function, **kwargs):
         self.comparison_level_function = comparison_level_function
         self.kwargs = kwargs
+        del self.kwargs["dialect"]
 
-    def activate(self, dialect_mapping):
-        del self.kwargs["dialect_mapping"]
-        return self.comparison_level_function(
-            dialect_mapping=dialect_mapping, **self.kwargs
-        )
+    def activate(self, dialect):
+        return self.comparison_level_function(dialect=dialect, **self.kwargs)
+
+    def __getattr__(self, name):
+        if name != "activate":
+            warnings.warn(
+                "This comparison level cannot be used directly because it doesn't have "
+                "a dialect associated with it.\nEither pass a dialect to it when you "
+                "create it, or obtain an activated version by calling\n"
+                "activated_level = this_level.activate(dialect)\n"
+                'eg. this_level.activate("duckdb"))'
+            )
 
 
 def levenshtein_level(
-    col_name: str, distance_threshold: int, dialect_mapping=None
+    col_name: str, distance_threshold: int, dialect=None
 ) -> ComparisonLevel:
-    if not dialect_mapping:
+    if not dialect:
         kwargs = locals()
         return LazyComparisonLevelFactory(levenshtein_level, **kwargs)
 
-    lev_fn_name = dialect_mapping["levenshtein"]
+    lev_fn_name = dialect_mapping[dialect]["levenshtein"]
     sql_cond = f"{lev_fn_name}({col_name}_l, {col_name}_r) " f"<= {distance_threshold}"
     level_dict = {
         "sql_condition": sql_cond,
