@@ -11,7 +11,7 @@ class Linker:
     def __init__(self, settings_dict: dict):
         if self.dialect:
             cl = settings_dict["comparison_level"]
-            self.comparison_level = cl.activate(dialect=self.dialect)
+            self.comparison_level = cl.get_activated_level(dialect=self.dialect)
 
 
 class DuckDBLinker(Linker):
@@ -31,16 +31,16 @@ class LazyComparisonLevelFactory:
         self.kwargs = kwargs
         del self.kwargs["dialect"]
 
-    def activate(self, dialect):
+    def get_activated_level(self, dialect):
         return self.comparison_level_function(dialect=dialect, **self.kwargs)
 
     def __getattr__(self, name):
-        if name != "activate":
+        if name != "get_activated_level":
             warnings.warn(
                 "This comparison level cannot be used directly because it doesn't have "
                 "a dialect associated with it.\nEither pass a dialect to it when you "
                 "create it, or obtain an activated version by calling\n"
-                "activated_level = this_level.activate(dialect)\n"
+                "activated_level = this_level.get_activated_level(dialect)\n"
                 'eg. this_level.activate("duckdb"))'
             )
 
