@@ -13,9 +13,12 @@ linker = DuckDBLinker(settings)
 
 # To get a ComparisonLevel, call the levenshtein_level with a dialect
 cl = levenshtein_level("name", 2, dialect="duckdb")
+cl.level_dict
 
 # Get a lazy level, omit the dialect.  This returns a LazyComparisonLevelFactory
 lazy_level = levenshtein_level("name", 2)
+lazy_level.get_dialected_level("duckdb").level_dict
+
 
 # If you ask for a ComparisonLevel method on a LazyComparisonLevelFactory
 # you get a helpful warning

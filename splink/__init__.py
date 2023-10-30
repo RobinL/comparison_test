@@ -1,5 +1,6 @@
 import warnings
 
+
 duckdb_mapping = {"levenshtein": "levenshtein", "jaro_winkler": "jaro_winkler"}
 all_dialects_mapping = {"duckdb": duckdb_mapping}
 
@@ -33,8 +34,9 @@ class LazyComparisonLevelFactory:
 
     def __getattr__(self, name):
         if name != "get_dialected_level":
+            name = self.comparison_level_function.__name__
             warnings.warn(
-                "This comparison level cannot be called directly because it doesn't have "
+                f"{name} cannot be called directly because it doesn't have "
                 "a dialect associated with it.\nEither pass a dialect to it when you "
                 "create it, or obtain an activated version by calling\n"
                 "comparison_level = comparison_level.get_dialected_level(dialect)\n"
