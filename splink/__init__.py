@@ -44,3 +44,16 @@ class levenshtein_level(LazyLevel):
             "label_for_charts": f"{lev_fn_name} <= {self.distance_threshold}",
         }
         return level_dict
+
+
+# The problem is you still need something like
+
+
+def levenshtein_level_factory(
+    col_name: str, distance_threshold: int, dialect: str = None
+):
+    lev = levenshtein_level(col_name, distance_threshold, dialect)
+    if dialect:
+        return ComparisonLevel(lev.comparison_level_dict)
+    else:
+        return lev
