@@ -31,7 +31,7 @@ class ComparisonLevel:
         self.level_dict = level_dict
 
 
-class LazyComparisonLevelFactory:
+class LazyComparisonLevel:
     def __init__(self, comparison_level_function, **kwargs):
         self.comparison_level_function = comparison_level_function
         self.kwargs = kwargs
@@ -58,7 +58,7 @@ def levenshtein_level(
 ) -> ComparisonLevel:
     if not dialect:
         kwargs = locals()
-        return LazyComparisonLevelFactory(levenshtein_level, **kwargs)
+        return LazyComparisonLevel(levenshtein_level, **kwargs)
 
     dialect_mapping = all_dialects_mapping[dialect]
 
@@ -71,7 +71,7 @@ def levenshtein_level(
     return ComparisonLevel(level_dict)
 
 
-class LazyBlockingRuleFactory:
+class LazyBlockingRule:
     def __init__(self, blocking_rule_function, **kwargs):
         self.blocking_rule_function = blocking_rule_function
         self.kwargs = kwargs
@@ -90,7 +90,7 @@ class BlockingRule:
 def block_on(col_names: list[str], dialect=None) -> BlockingRule:
     if not dialect:
         kwargs = locals()
-        return LazyBlockingRuleFactory(levenshtein_level, **kwargs)
+        return LazyBlockingRule(levenshtein_level, **kwargs)
 
     dialect_mapping = all_dialects_mapping[dialect]
     br_string = " AND ".join(f"(l.{col} = r.{col})" for col in col_names)
