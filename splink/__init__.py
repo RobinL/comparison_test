@@ -52,7 +52,7 @@ class ComparisonLevel:
         self.level_dict = level_dict
 
 
-class LazyComparisonLevelFactory:
+class LazyComparisonLevel:
     def __init__(self, comparison_level_function, **kwargs):
         self.comparison_level_function = comparison_level_function
         self.kwargs = kwargs
@@ -106,7 +106,7 @@ def distance_function_level(
 ) -> ComparisonLevel:
     if not dialect:
         kwargs = locals()
-        return LazyComparisonLevelFactory(distance_function_level, **kwargs)
+        return LazyComparisonLevel(distance_function_level, **kwargs)
 
     if higher_is_more_similar:
         operator = ">="
@@ -142,7 +142,7 @@ def levenshtein_level(
     """
     if not dialect:
         kwargs = locals()
-        return LazyComparisonLevelFactory(levenshtein_level, **kwargs)
+        return LazyComparisonLevel(levenshtein_level, **kwargs)
 
     lev_fn_name = lookup_dialect(dialect, "levenshtein")
 
@@ -156,7 +156,7 @@ def jaro_winkler_level(
 ) -> ComparisonLevel:
     if not dialect:
         kwargs = locals()
-        return LazyComparisonLevelFactory(jaro_winkler_level, **kwargs)
+        return LazyComparisonLevel(jaro_winkler_level, **kwargs)
 
     jw_fn_name = lookup_dialect(dialect, "jaro_winkler")
 
