@@ -23,7 +23,7 @@ class ComparisonLevel:
         self.level_dict = level_dict
 
 
-class LazyComparisonLevelFactory:
+class LazyComparisonLevel:
     def __init__(self, comparison_level_function, **kwargs):
         self.comparison_level_function = comparison_level_function
         self.kwargs = kwargs
@@ -51,7 +51,7 @@ def levenshtein_level(
 ) -> ComparisonLevel:
     if not dialect:
         kwargs = locals()
-        return LazyComparisonLevelFactory(levenshtein_level, **kwargs)
+        return LazyComparisonLevel(levenshtein_level, **kwargs)
 
     dialect_mapping = all_dialects_mapping[dialect]
 
