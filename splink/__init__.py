@@ -1,5 +1,4 @@
-import warnings
-
+from dataclasses import dataclass
 
 duckdb_mapping = {"levenshtein": "levenshtein", "jaro_winkler": "jaro_winkler"}
 all_dialects_mapping = {"duckdb": duckdb_mapping}
@@ -7,9 +6,8 @@ all_dialects_mapping = {"duckdb": duckdb_mapping}
 
 class Linker:
     def __init__(self, settings_dict: dict):
-        if self.dialect:
-            cl = settings_dict["comparison_level"]
-            self.comparison_level = cl.get_dialected_level(dialect=self.dialect)
+        cl = settings_dict["comparison_level"]
+        self.comparison_level = cl.get_comparison_level(self.dialect)
 
 
 class DuckDBLinker(Linker):
@@ -23,42 +21,48 @@ class ComparisonLevel:
         self.level_dict = level_dict
 
 
-class LazyComparisonLevel:
-    def __init__(self, comparison_level_function, **kwargs):
-        self.comparison_level_function = comparison_level_function
-        self.kwargs = kwargs
-        del self.kwargs["dialect"]
-
-    def get_dialected_level(self, dialect):
-        return self.comparison_level_function(dialect=dialect, **self.kwargs)
-
-    def __getattr__(self, name):
-        if name != "get_dialected_level":
-            name = self.comparison_level_function.__name__
-            warnings.warn(
-                f"{name} cannot be called directly because it doesn't have "
-                "a dialect associated with it.\nEither pass a dialect to it when you "
-                "create it, or obtain an activated version by calling\n"
-                "comparison_level = comparison_level.get_dialected_level(dialect)\n"
-                'eg. comparison_level.get_dialected_level("duckdb"))\n'
-                "Note this will happen automatically when this is passed into the "
-                "linker as part of the settings"
-            )
+@dataclass
+class InputColumn:
+    col_name: str
+    dialect: str
 
 
-def levenshtein_level(
-    col_name: str, distance_threshold: int, dialect=None
-) -> ComparisonLevel:
-    if not dialect:
-        kwargs = locals()
-        return LazyComparisonLevel(levenshtein_level, **kwargs)
+@dataclass
+class ComparisonLevelCreator:
+    def create_level_dict(self):
+        raise NotImplementedError("No create_level_dict method defined")
 
-    dialect_mapping = all_dialects_mapping[dialect]
+    def get_comparison_level(self, dialect=None):
+        if dialect:
+            self.dialect = dialect
+        return ComparisonLevel(self.create_level_dict())
 
-    lev_fn_name = dialect_mapping["levenshtein"]
-    sql_cond = f"{lev_fn_name}({col_name}_l, {col_name}_r) " f"<= {distance_threshold}"
-    level_dict = {
-        "sql_condition": sql_cond,
-        "label_for_charts": f"{lev_fn_name} <= {distance_threshold}",
-    }
-    return ComparisonLevel(level_dict)
+    @property
+    def input_column(self):
+        # To create a comparison level, a dialect is essential even if no special
+        # SQL functions are needed due to differencnes in identifier quotes "" ``
+        return InputColumn(self.col_name, self.dialect)
+
+    @property
+    def dialect_mapping(self):
+        return all_dialects_mapping[self.dialect]
+
+
+@dataclass
+class LevenshteinLevel(ComparisonLevelCreator):
+    col_name: str
+    distance_threshold: int
+    dialect: str = None
+
+    def create_level_dict(self):
+        input_col = self.input_column
+        lev_fn_name = self.dialect_mapping["levenshtein"]
+        sql_cond = (
+            f"{lev_fn_name}({input_col.col_name}_l, {input_col.col_name}_r) "
+            f"<= {self.distance_threshold}"
+        )
+        level_dict = {
+            "sql_condition": sql_cond,
+            "label_for_charts": f"{lev_fn_name} <= {self.distance_threshold}",
+        }
+        return level_dict
