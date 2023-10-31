@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 duckdb_mapping = {"levenshtein": "levenshtein", "jaro_winkler": "jaro_winkler"}
@@ -27,13 +28,18 @@ class InputColumn:
     dialect: str
 
 
-@dataclass
-class ComparisonLevelCreator:
-    def create_sql(self):
-        raise NotImplementedError("mag")
+class ComparisonLevelCreator(ABC):
+    def __init__(self, col_name: str, dialect: str = None):
+        self.col_name = col_name
+        self.dialect = dialect
 
+    @abstractmethod
+    def create_sql(self):
+        pass
+
+    @abstractmethod
     def create_label_for_charts(self):
-        raise NotImplementedError("mag")
+        pass
 
     def get_comparison_level(self, dialect=None):
         if dialect:
@@ -45,12 +51,28 @@ class ComparisonLevelCreator:
             "sql_condition": self.create_sql(),
             "label_for_charts": self.create_label_for_charts(),
         }
+        optional_keys = [
+            "tf_adjustment_column",
+            "tf_adjustment_weight",
+            "tf_minimum_u_value",
+            "m_probability",
+            "u_probability",
+            "is_null_level",
+        ]
+
+        for k in optional_keys:
+            if hasattr(self, k):
+                level_dict[k] = getattr(self, k)
+
         return level_dict
 
     @property
     def input_column(self):
-        # To create a comparison level, a dialect is essential even if no special
-        # SQL functions are needed due to differencnes in identifier quotes "" ``
+        if not hasattr(self, "col_name") or not hasattr(self, "dialect"):
+            raise AttributeError(
+                "Both self.col_name and self.dialect "
+                "must be set in your __init__ method"
+            )
         return InputColumn(self.col_name, self.dialect)
 
     @property
