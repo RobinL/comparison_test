@@ -29,13 +29,23 @@ class InputColumn:
 
 @dataclass
 class ComparisonLevelCreator:
-    def create_level_dict(self):
-        raise NotImplementedError("No create_level_dict method defined")
+    def create_sql(self):
+        raise NotImplementedError("mag")
+
+    def create_label_for_charts(self):
+        raise NotImplementedError("mag")
 
     def get_comparison_level(self, dialect=None):
         if dialect:
             self.dialect = dialect
         return ComparisonLevel(self.create_level_dict())
+
+    def create_level_dict(self):
+        level_dict = {
+            "sql_condition": self.create_sql(),
+            "label_for_charts": self.create_label_for_charts(),
+        }
+        return level_dict
 
     @property
     def input_column(self):
@@ -54,15 +64,13 @@ class LevenshteinLevel(ComparisonLevelCreator):
     distance_threshold: int
     dialect: str = None
 
-    def create_level_dict(self):
+    def create_sql(self):
         input_col = self.input_column
         lev_fn_name = self.dialect_mapping["levenshtein"]
-        sql_cond = (
+        return (
             f"{lev_fn_name}({input_col.col_name}_l, {input_col.col_name}_r) "
             f"<= {self.distance_threshold}"
         )
-        level_dict = {
-            "sql_condition": sql_cond,
-            "label_for_charts": f"{lev_fn_name} <= {self.distance_threshold}",
-        }
-        return level_dict
+
+    def create_label_for_charts(self):
+        return (f"Levenshtein <= {self.distance_threshold}",)
