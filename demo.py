@@ -1,4 +1,4 @@
-from splink import DuckDBLinker, levenshtein_level
+from splink import DuckDBLinker, levenshtein_level, block_on
 
 #########################
 # Suggested Usage Pattern (the settings object here does not have its full complexity)
@@ -36,3 +36,9 @@ linker = DuckDBLinker(settings)
 
 # e.g. this works
 linker.comparison_level.level_dict
+
+# Demo of block on
+
+block_on(["first_name", "surname"])
+
+block_on(["first_name", "surname"], "duckdb")._blocking_rule
